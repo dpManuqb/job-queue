@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis
+    role: dashboard
+  name: redis-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+      role: dashboard
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: dashboard
+    spec:
+      containers:
+        - image: redis-job-dashboard:1.0.0
+          name: job-dashboard
+          ports:
+            - containerPort: 9181
+          env:
+            - name: RQ_DASHBOARD_BIND
+              value: "0.0.0.0"
+            - name: RQ_DASHBOARD_PORT
+              value: "9181"
+            - name: RQ_DASHBOARD_REDIS_URL
+              value: "redis://redis-db:6379"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi

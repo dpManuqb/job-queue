@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis
+    role: producer
+  name: redis-producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+      role: producer
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: producer
+    spec:
+      containers:
+        - image: redis-producer:1.0.0
+          name: redis-producer
+          env:
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_HOST
+              value: "redis-db"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi

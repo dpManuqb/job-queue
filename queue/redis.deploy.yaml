@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis
+    role: queue
+  name: redis-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+      role: queue
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: queue
+    spec:
+      containers:
+        - image: redis:6.2.6
+          name: redis-db
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi

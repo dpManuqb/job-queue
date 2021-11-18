@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis
+    role: worker
+  name: redis-worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: redis
+      role: worker
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: worker
+    spec:
+      containers:
+        - image: redis-worker:1.0.0
+          name: worker
+          env:
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_HOST
+              value: "redis-db"
+          resources:
+            requests:
+              cpu: 750m
+              memory: 1000Mi

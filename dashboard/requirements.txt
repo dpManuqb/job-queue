@@ -1,0 +1,2 @@
+rq-dashboard==0.6.1
+click==7.1.2
