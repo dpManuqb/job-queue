@@ -1,0 +1,38 @@
+version: "3"
+
+services:
+  queue:
+    container_name: db
+    image: redis-queue:1.0.0
+    ports: 
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    
+  dashboard:
+    container_name: dashboard
+    image: redis-dashboard:1.0.0
+    ports:
+      - "9181:9181"
+    environment:
+      - RQ_DASHBOARD_BIND=0.0.0.0
+      - RQ_DASHBOARD_PORT=9181
+      - RQ_DASHBOARD_REDIS_URL=redis://db:6379
+
+  producer:
+    container_name: producer
+    image: redis-producer:1.0.0
+    ports:
+      - "8080:8080"
+    environment:
+      - LOGLEVEL=DEBUG
+      - REDIS_HOST=db
+
+  worker:
+    image: redis-worker:1.0.0
+    environment:
+      - REDIS_PORT=6379
+      - REDIS_HOST=db
+
+volumes:
+  redis_data:

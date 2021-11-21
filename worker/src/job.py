@@ -1,5 +1,8 @@
 import time
 
-def sample_dummy_job(time_s: int):
+def wait(time_s: int):
     time.sleep(time_s)
+    return f"Waited {time_s} seconds!"
+
+def health():
     return "Ok"

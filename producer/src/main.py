@@ -1,10 +1,51 @@
-from redis import Redis
-from rq import Queue
 import os
+import logging
+import uvicorn
+from fastapi import FastAPI, Request, Response
+from src.job import JobProducer
 
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = os.getenv("REDIS_PORT", "6397")
+LOG_LEVEL = os.getenv("LOGLEVEL", "DEBUG")
+
+logging.basicConfig(level="ERROR")
+logger = logging.getLogger(__name__)
+logger.setLevel(LOG_LEVEL)
+
+app = FastAPI()
+
+@app.api_route("/healthz", methods=["GET"])
+def health():
+    """Health endpoint"""
+    logger.debug("Health Ok")
+    return Response(content="OK", status_code=200)
+
+@app.api_route("/job", methods=["POST"])
+async def post_job(request: Request):
+    """Endpoint to submit one job"""
+    data = await request.json()
+
+    try:
+        producer = JobProducer()
+        _id = producer.add_job(data["class"], data["payload"])
+        producer.close()
+        return Response(content=_id, status_code=202)
+
+    except Exception as e:
+        logger.error(e)
+        return Response(f"Some error ocurred", status_code=500)
+        
+@app.api_route("/job/{_id}", methods=["GET"])
+def get_status_job(_id: str):
+    """Endpoint to get job status"""
+    try:
+        producer = JobProducer()
+        status = producer.job_status(_id)
+        producer.close()
+        return Response(content=status, status_code=200)
+
+    except Exception as e:
+        logger.error(e)
+        return Response(f"Some error ocurred", status_code=500)
+
 
 if(__name__ == "__main__"):
-    q = Queue(connection=Redis(host=REDIS_HOST, port=int(REDIS_PORT)))
-    q.enqueue("job.sample_dummy_job", 10)
+    uvicorn.run(app, host="0.0.0.0", port=8080, log_level="debug")
