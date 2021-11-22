@@ -3,11 +3,17 @@ version: "3"
 services:
   queue:
     container_name: db
-    image: redis-queue:1.0.0
+    image: redis:6.2.6-alpine
     ports: 
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: redis-cli ping || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
     
   dashboard:
     container_name: dashboard
@@ -18,6 +24,14 @@ services:
       - RQ_DASHBOARD_BIND=0.0.0.0
       - RQ_DASHBOARD_PORT=9181
       - RQ_DASHBOARD_REDIS_URL=redis://db:6379
+    depends_on:
+      - queue
+    healthcheck:
+      test: curl --fail http://localhost:9181 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
   producer:
     container_name: producer
@@ -26,13 +40,47 @@ services:
       - "8080:8080"
     environment:
       - LOGLEVEL=DEBUG
-      - REDIS_HOST=db
+      #- CONFIG_PATH=config/app.conf
+      - CONFIG_PATH=http://configuration/redis/producer/app.conf
+    depends_on:
+      - queue
+    healthcheck:
+      test: curl --fail http://localhost:8080/healthz || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
   worker:
     image: redis-worker:1.0.0
     environment:
       - REDIS_PORT=6379
       - REDIS_HOST=db
+    depends_on:
+      - queue
+    healthcheck:
+      test: rq info | grep -c $$(ip -4 a | grep eth0 | tr " " "\n" | grep -A 1 inet | grep -E -o "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}") || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+  
+  webdav:
+    container_name: configuration
+    image: bytemark/webdav:2.4
+    ports:
+      - "80:80"
+    environment:
+      - ANONYMOUS_METHODS=ALL
+    volumes:
+      - webdav_data:/var/lib/dav
+    healthcheck:
+      test: wget --spider http://localhost || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
 volumes:
   redis_data:
+  webdav_data:

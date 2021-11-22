@@ -25,14 +25,29 @@ async def post_job(request: Request):
 
     try:
         producer = JobProducer()
-        _id = producer.add_job(data["class"], data["payload"])
+        _id = producer.add_job(data)
         producer.close()
         return Response(content=_id, status_code=202)
 
     except Exception as e:
         logger.error(e)
         return Response(f"Some error ocurred", status_code=500)
-        
+
+@app.api_route("/job/batch", methods=["POST"])
+async def post_job_batch(request: Request):
+    """Endpoint to submit several jobs at once"""
+    data = await request.json()
+
+    try:
+        producer = JobProducer()
+        _ids = producer.add_batch(data)
+        producer.close()
+        return Response(content=str(_ids), status_code=202)
+
+    except Exception as e:
+        logger.error(e)
+        return Response(f"Some error ocurred", status_code=500)
+
 @app.api_route("/job/{_id}", methods=["GET"])
 def get_status_job(_id: str):
     """Endpoint to get job status"""
